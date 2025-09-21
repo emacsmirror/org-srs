@@ -207,11 +207,12 @@ When COLUMN is non-nil, move to COLUMN first before setting the field."
                                                          (org-srs-table-end)))
                                                  (point (- (point) (org-srs-table-begin))))
   "Call THUNK in a temporary buffer with a copy of the current table.
-Return the modified table and the point position as multiple values.
 
 THUNK is a function to execute in the temporary buffer.
 TABLE is a string containing the table contents to use.
 POINT is the starting position within the table when executing THUNK.
+
+Return the modified table and the point position as multiple values.
 
 This function is internally used in `org-srs-table-call-with-temp-buffer'."
   (cl-assert (not (cl-minusp point)))
