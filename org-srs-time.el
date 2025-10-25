@@ -62,9 +62,11 @@
   "Add the duration specified by DESC to TIME and return the resulting time value."
   (time-add time (seconds-to-time (org-srs-time-desc-seconds desc))))
 
+(defalias 'org-srs-time-seconds #'time-to-seconds)
+
 (defun org-srs-time-difference (time-a time-b)
   "Calculate the difference in seconds between TIME-A and TIME-B."
-  (- (time-to-seconds time-a) (time-to-seconds time-b)))
+  (- (org-srs-time-seconds time-a) (org-srs-time-seconds time-b)))
 
 (cl-defmacro org-srs-time-define-comparators (&optional (prefix 'org-srs-time))
   "Define comparison functions for time differences.
