@@ -177,6 +177,17 @@ ITEM and ARGS are passed to `org-srs-item-marker' to locate the review item."
     (cl-assert (looking-at org-heading-regexp))
     (org-get-priority (match-string-no-properties 0))))
 
+(defun org-srs-item-last-review-time (&rest args)
+  "Return the last review time for the review item specified by ARGS."
+  (org-srs-item-with-current args
+    (org-srs-table-goto-starred-line)
+    (forward-line -1)
+    (org-srs-timestamp-time (org-srs-table-field 'timestamp))))
+
+(defun org-srs-item-interval (&rest args)
+  "Return the interval of the review item specified by ARGS as seconds."
+  (org-srs-time-difference (apply #'org-srs-item-due-time args) (apply #'org-srs-item-last-review-time args)))
+
 (defun org-srs-item-repeat (item &rest args)
   "Repeat the review ITEM with ARGS and update the review log."
   (org-srs-item-goto item)

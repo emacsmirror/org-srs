@@ -198,8 +198,9 @@
       (position (cl-sort items #'org-srs-review-strategy-item-marker< :key (apply-partially #'apply #'org-srs-item-marker)))
       (due-date (cl-sort items #'org-srs-time< :key (apply-partially #'apply #'org-srs-item-due-time)))
       (priority (cl-sort items #'> :key (apply-partially #'apply #'org-srs-item-priority)))
+      (interval (cl-sort items #'< :key (apply-partially #'apply #'org-srs-item-interval)))
       (random (cl-sort items #'< :key #'sxhash-eq))
-      (t (cl-sort items #'< :key order)))))
+      (t (apply #'cl-sort items (cl-etypecase order (function (list #'< :key order)) (list order)))))))
 
 (provide 'org-srs-review-strategy)
 ;;; org-srs-review-strategy.el ends here
