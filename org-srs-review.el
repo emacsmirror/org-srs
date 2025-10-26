@@ -108,7 +108,8 @@ The learning ahead limit is determined by customizable option
   '((const :tag "Position" position)
     (const :tag "Random" random)
     (const :tag "Due date" due-date)
-    (const :tag "Priority" priority))
+    (const :tag "Priority" priority)
+    (const :tag "Interval" interval))
   "List of review orders for customization.")
 
 (org-srs-property-defcustom org-srs-review-order-new-review 'review-first
