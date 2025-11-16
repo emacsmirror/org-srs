@@ -139,10 +139,10 @@
     (org-srs-item-card-remove-ellipsis-overlays)))
 
 (cl-defun org-srs-item-card-hide (&optional (side :back))
-  "Hide either the front or back SIDE of the current flashcard."
+  "Hide SIDE of the current flashcard."
   (org-srs-item-card-show)
-  (cl-ecase side
-    (:front
+  (cl-case side
+    ((:front t)
      (cl-destructuring-bind (beg . end) (cl-nth-value 0 (org-srs-item-card-regions))
        (cond
         ((= (save-excursion (org-back-to-heading-or-point-min) (point)) beg)
@@ -152,8 +152,9 @@
            (org-srs-item-card-put-ellipsis-overlay (point) end)))
         ((save-excursion (goto-char beg) (and (org-at-heading-p) (<= end (org-srs-entry-end-position))))
          (save-excursion (goto-char beg) (org-fold-hide-subtree)))
-        (t (org-srs-item-card-put-ellipsis-overlay beg end)))))
-    (:back
+        (t (org-srs-item-card-put-ellipsis-overlay beg end))))))
+  (cl-case side
+    ((:back t)
      (cl-destructuring-bind (beg . end) (cl-nth-value 1 (org-srs-item-card-regions))
        (if (save-excursion (goto-char beg) (and (org-at-heading-p) (<= end (org-srs-entry-end-position))))
            (save-excursion (goto-char beg) (org-fold-hide-subtree))
