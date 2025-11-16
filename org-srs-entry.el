@@ -34,6 +34,7 @@
 (require 'outline)
 
 (require 'org)
+(require 'org-element)
 
 (defun org-srs-entry-beginning-position ()
   "Return the beginning position of the current entry or document."
@@ -85,6 +86,35 @@ ARGS are passed to `org-end-of-meta-data' as is."
           (when (eq org-srs-entry-end-of-meta-data t)
             (forward-line -1))))
     (apply #'org-end-of-meta-data args)))
+
+(defun org-srs-entry-end-of-drawer (name)
+  "Move point to the end of the drawer named NAME, creating it if necessary."
+  (save-restriction
+    (org-back-to-heading-or-point-min)
+    (let ((entry-start (point))
+          (entry-end (org-srs-entry-end-position))
+          (drawer-start-regexp (rx bol (* blank) ":" (literal name) ":" (* blank) eol))
+          (drawer-end-regexp (rx bol (* blank) ":END:" (* blank) eol)))
+      (if (re-search-forward drawer-start-regexp entry-end t)
+          (progn
+            (goto-char (org-element-end (org-element-at-point)))
+            (re-search-backward drawer-end-regexp entry-start))
+        (org-srs-entry-end-of-meta-data t)
+        (unless (re-search-backward drawer-end-regexp entry-start t)
+          (org-back-to-heading-or-point-min))
+        (end-of-line)
+        (newline-and-indent)
+        (insert ":" name ":")
+        (newline-and-indent)
+        (insert ":END:")
+        (beginning-of-line)))))
+
+(defun org-srs-entry-beginning-of-drawer (name)
+  "Move point to the beginning of the drawer named NAME, creating it if necessary."
+  (org-back-to-heading-or-point-min)
+  (let ((heading-start (point)))
+    (org-srs-entry-end-of-drawer name)
+    (re-search-backward (rx bol (* blank) ":" (literal name) ":" (* blank) eol) heading-start)))
 
 (provide 'org-srs-entry)
 ;;; org-srs-entry.el ends here
