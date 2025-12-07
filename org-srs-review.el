@@ -36,12 +36,15 @@
 (require 'custom)
 (require 'project)
 
+(require 'org)
+
 (require 'org-srs-property)
 (require 'org-srs-table)
 (require 'org-srs-log)
 (require 'org-srs-query)
 (require 'org-srs-item)
 (require 'org-srs-time)
+(require 'org-srs-entry)
 (require 'org-srs-review-strategy)
 
 (defgroup org-srs-review nil
@@ -274,6 +277,22 @@ to review."
   (message "Review done"))
 
 (add-hook 'org-srs-review-finish-hook #'org-srs-review-message-review-done)
+
+(defun org-srs-review-display-inline-images (&rest _)
+  "Display inline images in the current entry and clean them up after the review."
+  (cl-flet ((overlays ()
+              (cl-loop for overlay in org-inline-image-overlays
+                       collect (cons (cons (overlay-start overlay) (overlay-end overlay)) overlay))))
+    (let ((overlays (overlays)))
+      (org-display-inline-images t t (org-srs-entry-beginning-position) (org-srs-entry-end-position))
+      (org-srs-review-add-hook-once
+       'org-srs-review-continue-hook
+       (let ((overlays (mapcar #'cdr (cl-nset-difference (overlays) overlays :key #'car :test #'equal))))
+         (lambda ()
+           (cl-loop for overlay in overlays
+                    do (org-remove-inline-images (overlay-start overlay) (overlay-end overlay)))))))))
+
+(add-hook 'org-srs-item-before-review-hook #'org-srs-review-display-inline-images)
 
 ;;;###autoload
 (defun org-srs-review-quit ()

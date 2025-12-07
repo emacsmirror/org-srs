@@ -133,7 +133,6 @@
   "Show the current flashcard entirely by unfolding the text and removing ellipses."
   (save-excursion
     (org-fold-show-subtree)
-    (org-display-inline-images t)
     (org-srs-item-card-remove-ellipsis-overlays)))
 
 (cl-defun org-srs-item-card-hide (&optional (side :back))
