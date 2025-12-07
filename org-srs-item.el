@@ -241,7 +241,17 @@ ITEM and ARGS are passed to `org-srs-item-marker' to locate the review item."
   (cl-destructuring-bind (start . end) (apply #'org-srs-item-bounds args)
     (delete-region start end)))
 
+(defvar org-srs-item-before-review-hook nil
+  "Hook run before primary methods of `org-srs-item-review' are called.")
+
+(defvar org-srs-item-after-review-hook nil
+  "Hook run after primary methods of `org-srs-item-review' are called.")
+
 (cl-defgeneric org-srs-item-review (type &rest args)
+  (:method :before (type &rest args) "Run hook `org-srs-item-before-review-hook' with TYPE and ARGS."
+           (apply #'run-hook-with-args 'org-srs-item-before-review-hook type args))
+  (:method :after (type &rest args) "Run hook `org-srs-item-after-review-hook' with TYPE and ARGS."
+           (apply #'run-hook-with-args 'org-srs-item-after-review-hook type args))
   (:documentation "Review the item specified by TYPE and ARGS."))
 
 (defun org-srs-item-exists-p (&rest args)
