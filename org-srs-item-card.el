@@ -47,10 +47,6 @@
   :group 'org-srs-item
   :prefix "org-srs-item-card-")
 
-(cl-defmethod org-srs-item-review ((_type null) &rest args)
-  "Method to set the default item type to `card' with ARGS passed as is."
-  (apply #'org-srs-item-review 'card args))
-
 (defun org-srs-item-card-regions-1 (&optional scope)
   "Determine the front and back regions of the current flashcard within SCOPE."
   (let ((level (or (org-current-level) 0))
@@ -164,15 +160,16 @@
 
 (cl-defmethod org-srs-item-review ((type (eql 'card)) &rest args)
   "Method to review an item of TYPE `card' with ARGS."
-  (cl-destructuring-bind (&optional (side 'front)) args
+  (cl-destructuring-bind (&optional (side 'back)) args
     (org-srs-item-narrow)
-    (org-srs-item-card-hide (cl-ecase side (front :back) (back :front)))
+    (org-srs-item-card-hide (cl-ecase side (front :front) (back :back)))
     (org-srs-item-add-hook-once 'org-srs-item-after-confirm-hook (org-srs-review-item-hook #'org-srs-item-card-show))
     (apply (org-srs-item-confirm) type args)))
 
 (cl-defmethod org-srs-item-new ((_type (eql 'card)) &rest args)
   "Method for creating a new flashcard with ARGS."
-  (apply #'org-srs-item-new nil args))
+  (cl-assert (null args))
+  (org-srs-item-new '(card back)))
 
 (cl-defmethod org-srs-item-new ((_type (eql 'card-reversible)) &rest args)
   "Method for creating a reversible flashcard with ARGS."
@@ -183,7 +180,11 @@
 (cl-defmethod org-srs-item-new ((_type (eql 'card-reversed)) &rest args)
   "Method for creating a reversed flashcard with ARGS."
   (cl-assert (null args))
-  (org-srs-item-new '(card back)))
+  (org-srs-item-new '(card front)))
+
+(define-advice org-srs-item-review (:filter-args (args) null-item-type-compat)
+  (cl-destructuring-bind (type &rest args) args
+    (cons (or type 'card) args)))
 
 (provide 'org-srs-item-card)
 ;;; org-srs-item-card.el ends here
