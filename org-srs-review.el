@@ -222,6 +222,13 @@ source choice."
         (alist-get (read (completing-read "Review scope: " (mapcar #'car sources) nil t)) sources)
       (cdr (cl-first sources)))))
 
+(defun org-srs-review-item-hook (hook)
+  "Convert HOOK used in `org-srs-review' to the hook required by `org-srs-item'."
+  (lambda (&rest item-args)
+    (cl-assert (local-variable-p 'org-srs-review-item))
+    (cl-assert (equal (cdar org-srs-review-item) (cdr item-args)))
+    (funcall hook)))
+
 (defun org-srs-review-end ()
   "Clean up after completing an item review."
   (cl-assert (local-variable-p 'org-srs-review-item))

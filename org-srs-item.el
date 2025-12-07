@@ -301,7 +301,7 @@ DEPTH controls where FUNCTION is placed in HOOK and defaults to 0.
 LOCAL controls whether to add HOOK buffer-locally and defaults to t.
 
 The returned function can be used to call `remove-hook' if needed."
-  (letrec ((hook-function (lambda () (remove-hook hook hook-function local) (funcall function))))
+  (letrec ((hook-function (lambda (&rest args) (remove-hook hook hook-function local) (apply function args))))
     (add-hook hook hook-function depth local)
     hook-function))
 
@@ -320,26 +320,40 @@ Automatically widen after reviewing the current item."
 (defvar org-srs-item-after-confirm-hook nil
   "Hook run after confirming a review item.")
 
-(defun org-srs-item-confirm-read-key (&rest _args)
-  "Wait for a key press to confirm the current item review."
-  (run-hooks 'org-srs-item-before-confirm-hook)
-  (read-key "Continue with any key")
-  (run-hooks 'org-srs-item-after-confirm-hook))
+(defun org-srs-item-confirm-read-key (&rest args)
+  "Wait for a key press to confirm the current item review.
 
-(defun org-srs-item-confirm-command (&rest _args)
+ARGS are passed to hooks `org-srs-item-before-confirm-hook' and
+`org-srs-item-after-confirm-hook' as is."
+  (run-hook-with-args 'org-srs-item-before-confirm-hook args)
+  (read-key "Continue with any key")
+  (run-hook-with-args 'org-srs-item-after-confirm-hook args))
+
+(defun org-srs-item-confirm-command (&rest args)
   "Continue the item being reviewed in the current review session.
 
 This command is intended to be used only when customizable option
 `org-srs-item-confirm' is set to `org-srs-item-confirm-command' for
-the current review item."
+the current review item.
+
+ARGS are passed to hooks `org-srs-item-before-confirm-hook' and
+`org-srs-item-after-confirm-hook' as is."
   (interactive)
-  (let ((flag-hook (eval-when-compile (letrec ((hook (lambda () (remove-hook 'org-srs-item-after-confirm-hook hook t)))) hook))))
-    (if (member flag-hook org-srs-item-after-confirm-hook)
-        (run-hooks 'org-srs-item-after-confirm-hook)
-      (cl-assert (not (called-interactively-p 'any)))
-      (run-hooks 'org-srs-item-before-confirm-hook)
-      (message (substitute-command-keys "Continue with \\[org-srs-item-confirm-command]"))
-      (add-hook 'org-srs-item-after-confirm-hook flag-hook nil t))))
+  (cl-loop for (hook next-hook) on org-srs-item-after-confirm-hook
+           when (eq hook #'org-srs-item-confirm-command)
+           do
+           (cl-assert (null args))
+           (cl-assert (local-variable-p 'org-srs-item-after-confirm-hook))
+           (remove-hook 'org-srs-item-after-confirm-hook hook t)
+           (cl-assert (equal (func-arity next-hook) '(0 . 0)))
+           (remove-hook 'org-srs-item-after-confirm-hook next-hook t)
+           and return (apply #'run-hook-with-args 'org-srs-item-after-confirm-hook (funcall next-hook))
+           finally
+           (cl-assert (not (called-interactively-p 'any)))
+           (apply #'run-hook-with-args 'org-srs-item-before-confirm-hook args)
+           (message (substitute-command-keys "Continue with \\[org-srs-item-confirm-command]"))
+           (add-hook 'org-srs-item-after-confirm-hook (lambda () args) -100 t)
+           (add-hook 'org-srs-item-after-confirm-hook #'org-srs-item-confirm-command -100 t)))
 
 (cl-defun org-srs-item-confirm-pending-p (&optional (command #'org-srs-item-confirm-command))
   "Check if there is a pending review item confirmation.
@@ -349,13 +363,13 @@ COMMAND specifies the confirmation command to check and defaults to
   (when (local-variable-p 'org-srs-item-after-confirm-hook)
     (let ((org-srs-item-before-confirm-hook
            (cons
-            (lambda ()
+            (lambda (&rest _)
               (setf org-srs-item-before-confirm-hook (cl-copy-list org-srs-item-before-confirm-hook))
               (cl-return-from org-srs-item-confirm-pending-p nil))
             org-srs-item-before-confirm-hook))
           (org-srs-item-after-confirm-hook
            (cons
-            (lambda ()
+            (lambda (&rest _)
               (setf org-srs-item-after-confirm-hook (cl-copy-list org-srs-item-after-confirm-hook))
               (cl-return-from org-srs-item-confirm-pending-p command))
             org-srs-item-after-confirm-hook)))

@@ -218,7 +218,7 @@ TEXT is the string containing the answer to be shown between brackets."
                     do (recenter) (org-srs-item-cloze-recenter-horizontally)
                     do (org-srs-item-add-hook-once
                         'org-srs-item-after-confirm-hook
-                        (apply-partially #'\(setf\ org-srs-item-cloze-overlay-text\) (org-srs-item-cloze-answer text) overlay)))
+                        (org-srs-review-item-hook (apply-partially #'\(setf\ org-srs-item-cloze-overlay-text\) (org-srs-item-cloze-answer text) overlay))))
            (org-srs-item-add-hook-once 'org-srs-review-continue-hook #'org-srs-item-cloze-remove-overlays 10)
            (apply (org-srs-item-confirm) type args)))
 

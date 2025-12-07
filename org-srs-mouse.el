@@ -109,7 +109,7 @@ CALLBACK is a function called with the pressed button's label."
 
 (defvar org-srs-review-item)
 
-(defun org-srs-mouse-show-intervals-in-minibuffer ()
+(defun org-srs-mouse-show-intervals-in-minibuffer (&rest _)
   "Display review intervals for the current review item in the minibuffer."
   (when (and org-srs-mouse-mode (org-srs-reviewing-p) (not (org-srs-item-confirm-pending-p)))
     (let ((item org-srs-review-item))

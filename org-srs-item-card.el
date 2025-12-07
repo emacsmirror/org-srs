@@ -40,6 +40,7 @@
 (require 'org-srs-property)
 (require 'org-srs-entry)
 (require 'org-srs-item)
+(require 'org-srs-review)
 
 (defgroup org-srs-item-card nil
   "Flashcard type for review items."
@@ -166,7 +167,7 @@
   (cl-destructuring-bind (&optional (side 'front)) args
     (org-srs-item-narrow)
     (org-srs-item-card-hide (cl-ecase side (front :back) (back :front)))
-    (org-srs-item-add-hook-once 'org-srs-item-after-confirm-hook #'org-srs-item-card-show)
+    (org-srs-item-add-hook-once 'org-srs-item-after-confirm-hook (org-srs-review-item-hook #'org-srs-item-card-show))
     (apply (org-srs-item-confirm) type args)))
 
 (cl-defmethod org-srs-item-new ((_type (eql 'card)) &rest args)
