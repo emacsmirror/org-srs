@@ -325,9 +325,9 @@ Automatically widen after reviewing the current item."
 
 ARGS are passed to hooks `org-srs-item-before-confirm-hook' and
 `org-srs-item-after-confirm-hook' as is."
-  (run-hook-with-args 'org-srs-item-before-confirm-hook args)
+  (apply #'run-hook-with-args 'org-srs-item-before-confirm-hook args)
   (read-key "Continue with any key")
-  (run-hook-with-args 'org-srs-item-after-confirm-hook args))
+  (apply #'run-hook-with-args 'org-srs-item-after-confirm-hook args))
 
 (defun org-srs-item-confirm-command (&rest args)
   "Continue the item being reviewed in the current review session.
