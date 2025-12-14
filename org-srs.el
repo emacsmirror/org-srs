@@ -59,7 +59,7 @@
 
 (require 'org-srs-algorithm)
 (require 'org-srs-algorithm-fsrs)
-(setf (default-value 'org-srs-algorithm) (or (default-value 'org-srs-algorithm) 'fsrs))
+(setf #1=(default-value 'org-srs-algorithm) (or #1# 'fsrs))
 
 (require 'org-srs-stats)
 (require 'org-srs-stats-interval)

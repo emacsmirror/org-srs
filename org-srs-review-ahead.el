@@ -49,7 +49,7 @@
 
 (defvar org-srs-review-source)
 
-(cl-defmethod org-srs-review-strategy-items ((_state (eql 'todo)) (_strategy (eql 'org-srs-review-ahead)) &rest args)
+(cl-defmethod org-srs-review-strategy-items ((_state org-srs-review-strategy-class-todo) (_strategy (eql 'org-srs-review-ahead)) &rest args)
   "Filter old review items using predicates ARGS for `org-srs-review-ahead-start'."
   (org-srs-query `(and (not new) (not suspended) . ,args) org-srs-review-source))
 

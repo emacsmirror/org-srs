@@ -71,8 +71,8 @@ RATINGS is a hash table mapping review items to their ratings."
     (setf (gethash org-srs-review-item (org-srs-review-cram-algorithm-ratings algorithm)) rating)
     nil))
 
-(cl-defmethod org-srs-review-strategy-items ((_state (eql 'todo)) (_strategy (eql 'org-srs-review-cram)) &rest args)
-  "Sort items to be reviewed matching the strategy in ARGS based on point."
+(cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-todo) (_strategy (eql 'org-srs-review-cram)) &rest args)
+  "Sort items in STATE `todo' matching the strategy in ARGS based on point."
   (cl-destructuring-bind (strategy algorithm &aux (ratings (org-srs-review-cram-algorithm-ratings algorithm))) args
     (cl-delete-if
      (lambda (item) (gethash item ratings))
@@ -83,7 +83,7 @@ RATINGS is a hash table mapping review items to their ratings."
                     (ignore-errors
                       (re-search-forward org-srs-item-header-regexp (org-srs-entry-end-position))
                       (cl-multiple-value-list (org-srs-item-at-point)))))
-              and items = (org-srs-review-strategy-items 'todo strategy)
+              and items = (org-srs-review-strategy-items state strategy)
               with dummy-cons = (cons nil items)
               initially (unless item-current (cl-return items))
               for cons = dummy-cons then (cdr cons)
