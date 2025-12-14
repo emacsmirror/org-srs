@@ -76,6 +76,12 @@
   "Method to return items in state `done' matching STRATEGY with ARGS."
   (apply #'org-srs-review-strategy-items '#s(org-srs-review-strategy-class-done) strategy args))
 
+(cl-defstruct (org-srs-review-strategy-class-todoset (:include org-srs-review-strategy-class-todo)))
+
+(cl-defmethod org-srs-review-strategy-items ((_state (eql 'todoset)) strategy &rest args)
+  "Method to return prospective items in state `todo' matching STRATEGY with ARGS."
+  (apply #'org-srs-review-strategy-items '#s(org-srs-review-strategy-class-todoset) strategy args))
+
 (cl-defmethod org-srs-review-strategy-items (state (strategy list) &rest args)
   "Method to return items in STATE for STRATEGY with ARGS ignored."
   (cl-assert (null args))
@@ -118,6 +124,10 @@
 
 (cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-done) (_strategy (eql 'or)) &rest strategies)
   "Method to return items in STATE `done' matching any of STRATEGIES."
+  (apply #'org-srs-review-strategy-items state 'union strategies))
+
+(cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-todoset) (_strategy (eql 'or)) &rest strategies)
+  "Method to return all items in STATE `todo' matching STRATEGIES."
   (apply #'org-srs-review-strategy-items state 'union strategies))
 
 (cl-defmethod org-srs-review-strategy-items ((_state org-srs-review-strategy-class-todo) (_strategy (eql 'due)) &rest _args)
@@ -167,6 +177,12 @@
   (cl-destructuring-bind (strategy _limit) args
     (org-srs-review-strategy-items state strategy)))
 
+(cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-todoset) (_strategy (eql 'limit)) &rest args)
+  "Method to return all items in STATE `todo' matching the strategy in ARGS."
+  (cl-destructuring-bind (strategy limit) args
+    (let ((items (org-srs-review-strategy-items state strategy)))
+      (cl-subseq items 0 (min (max (- limit (length (org-srs-review-strategy-items 'done strategy))) 0) (length items))))))
+
 (cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-todo) (_strategy (eql 'subseq)) &rest args)
   "Method to return partial items in STATE `todo' matching the strategy in ARGS."
   (cl-destructuring-bind (strategy &optional (start 0) (end 1)) args
@@ -175,6 +191,12 @@
 
 (cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-done) (_strategy (eql 'subseq)) &rest args)
   "Method to return all items in STATE `done' matching the strategy in ARGS."
+  (cl-destructuring-bind (strategy &rest args) args
+    (ignore args)
+    (org-srs-review-strategy-items state strategy)))
+
+(cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-todoset) (_strategy (eql 'subseq)) &rest args)
+  "Method to return all items in STATE `todo' matching the strategy in ARGS."
   (cl-destructuring-bind (strategy &rest args) args
     (ignore args)
     (org-srs-review-strategy-items state strategy)))

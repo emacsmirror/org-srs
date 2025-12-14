@@ -190,6 +190,11 @@ The behavior can be fine-tuned through various customizable options in the
   (let ((org-srs-review-source source))
     (org-srs-review-strategy-items 'done (org-srs-review-strategy))))
 
+(cl-defun org-srs-review-upcoming-items (&optional (source org-srs-review-source))
+  "Return upcoming review items in SOURCE according to the current strategy."
+  (let ((org-srs-review-source source))
+    (org-srs-review-strategy-items 'todoset (org-srs-review-strategy))))
+
 (defun org-srs-review-sources ()
   "Return potential review sources with gradually increasing scope."
   (cl-delete

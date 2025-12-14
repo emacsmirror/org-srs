@@ -68,6 +68,7 @@
 (require 'org-srs-ui)
 (require 'org-srs-ui-child-frame)
 (require 'org-srs-ui-mouse)
+(require 'org-srs-ui-header-line)
 
 (provide 'org-srs)
 ;;; org-srs.el ends here

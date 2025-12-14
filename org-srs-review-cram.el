@@ -93,6 +93,11 @@ RATINGS is a hash table mapping review items to their ratings."
               return (nconc (cl-shiftf (cdr cons) nil) (cdr dummy-cons))
               finally (cl-return (cdr dummy-cons))))))
 
+(cl-defmethod org-srs-review-strategy-items ((_state org-srs-review-strategy-class-done) (_strategy (eql 'org-srs-review-cram)) &rest args)
+  "Collect all reviewed item in the current cram review session from ARGS."
+  (cl-destructuring-bind (_strategy algorithm &aux (ratings (org-srs-review-cram-algorithm-ratings algorithm))) args
+    (hash-table-keys ratings)))
+
 (org-srs-property-defcustom org-srs-review-cram-strategy `(sort (ahead old ,(org-srs-timestamp-time "2999-12-31T23:59:59Z")) interval)
   "Review strategy used in cram review sessions."
   :group 'org-srs-review-cram

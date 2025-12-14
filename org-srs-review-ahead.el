@@ -53,6 +53,10 @@
   "Filter old review items using predicates ARGS for `org-srs-review-ahead-start'."
   (org-srs-query `(and (not new) (not suspended) . ,args) org-srs-review-source))
 
+(cl-defmethod org-srs-review-strategy-items ((state org-srs-review-strategy-class-done) (_strategy (eql 'org-srs-review-ahead)) &rest _args)
+  "Filter items in STATE `done' for `org-srs-review-ahead-start'."
+  (org-srs-review-strategy-items state 'old))
+
 ;;;###autoload
 (defun org-srs-review-ahead-start (&rest args)
   "Start a review session for items due in the near future.
