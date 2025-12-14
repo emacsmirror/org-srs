@@ -65,8 +65,9 @@
 (require 'org-srs-stats-interval)
 (require 'org-srs-stats-history)
 
-(require 'org-srs-child-frame)
-(require 'org-srs-mouse)
+(require 'org-srs-ui)
+(require 'org-srs-ui-child-frame)
+(require 'org-srs-ui-mouse)
 
 (provide 'org-srs)
 ;;; org-srs.el ends here

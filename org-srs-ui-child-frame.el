@@ -1,4 +1,4 @@
-;;; org-srs-child-frame.el --- Child frame utilities -*- lexical-binding: t -*-
+;;; org-srs-ui-child-frame.el --- Child frame utilities -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024-2025 Bohong Huang
 
@@ -33,55 +33,60 @@
 
 (require 'cl-lib)
 
-(defvar org-srs-child-frames nil
+(defgroup org-srs-ui-child-frame nil
+  "Child frame utilities for Org-srs user interfaces."
+  :group 'org-srs-ui
+  :prefix "org-srs-ui-child-frame-")
+
+(defvar org-srs-ui-child-frames nil
   "Alist mapping parent frames and child frame names to child frames.")
 
-(cl-defun org-srs-child-frame-p (&optional (frame (selected-frame)))
+(cl-defun org-srs-ui-child-frame-p (&optional (frame (selected-frame)))
   "Return the parent frame and name if FRAME is a child frame."
-  (cl-values-list (car (cl-rassoc frame org-srs-child-frames :test #'eq))))
+  (cl-values-list (car (cl-rassoc frame org-srs-ui-child-frames :test #'eq))))
 
-(cl-defun org-srs-child-frame-root (&optional (frame (selected-frame)))
+(cl-defun org-srs-ui-child-frame-root (&optional (frame (selected-frame)))
   "Return the root ancestor frame of FRAME by traversing parent frames."
-  (if-let ((parent (cl-nth-value 0 (org-srs-child-frame-p frame))))
+  (if-let ((parent (cl-nth-value 0 (org-srs-ui-child-frame-p frame))))
       (progn
         (cl-assert (eq parent (frame-parent frame)))
         (cl-assert (null (frame-parent parent)))
-        (org-srs-child-frame-root parent))
+        (org-srs-ui-child-frame-root parent))
     frame))
 
-(cl-defun org-srs-child-frames-1 (&optional (name nil namep))
-  "Return a filtered alist of child frames from variable `org-srs-child-frames'.
+(cl-defun org-srs-ui-child-frames-1 (&optional (name nil namep))
+  "Return a filtered alist of child frames from variable `org-srs-ui-child-frames'.
 
 If NAME is provided, only return child frames whose name matches NAME.
-Otherwise, return the value of variable `org-srs-child-frames' as is."
-  (if namep (cl-remove name org-srs-child-frames :key #'cadar :test-not #'eq) org-srs-child-frames))
+Otherwise, return the value of variable `org-srs-ui-child-frames' as is."
+  (if namep (cl-remove name org-srs-ui-child-frames :key #'cadar :test-not #'eq) org-srs-ui-child-frames))
 
-(defun org-srs-child-frames (&rest args)
+(defun org-srs-ui-child-frames (&rest args)
   "Return a filtered list of child frames matching ARGS.
 
-ARGS is passed to `org-srs-child-frames-1' which determines the filtering
+ARGS is passed to `org-srs-ui-child-frames-1' which determines the filtering
 behavior."
-  (mapcar #'cdr (apply #'org-srs-child-frames-1 args)))
+  (mapcar #'cdr (apply #'org-srs-ui-child-frames-1 args)))
 
-(cl-defmethod (setf org-srs-child-frames) (value &rest args)
+(cl-defmethod (setf org-srs-ui-child-frames) (value &rest args)
   "Set the filtered child frame list matching ARGS to VALUE.
 
-ARGS is passed to `org-srs-child-frames-1' which determines the filtering
+ARGS is passed to `org-srs-ui-child-frames-1' which determines the filtering
 behavior.
 
 This function can only be used to delete child frames, meaning any existing
 child frames not present in VALUE will be removed."
   (cl-assert (null value))
-  (mapc #'delete-frame (apply #'org-srs-child-frames args))
-  (setf org-srs-child-frames (cl-nset-difference org-srs-child-frames (apply #'org-srs-child-frames-1 args))))
+  (mapc #'delete-frame (apply #'org-srs-ui-child-frames args))
+  (setf org-srs-ui-child-frames (cl-nset-difference org-srs-ui-child-frames (apply #'org-srs-ui-child-frames-1 args))))
 
-(cl-defun org-srs-child-frame (name
-                               &key
-                               (parent (org-srs-child-frame-root))
-                               (window (frame-selected-window parent))
-                               (size (/ 16.0))
-                               (position :bottom)
-                               (buffer (get-buffer-create (format " *org-srs-child-frame %x/%s*" (sxhash-eq parent) name))))
+(cl-defun org-srs-ui-child-frame (name
+                                  &key
+                                  (parent (org-srs-ui-child-frame-root))
+                                  (window (frame-selected-window parent))
+                                  (size (/ 16.0))
+                                  (position :bottom)
+                                  (buffer (get-buffer-create (format " *org-srs-ui-child-frame %x/%s*" (sxhash-eq parent) name))))
   "Create or retrieve a child frame with NAME relative to PARENT frame.
 
 PARENT specifies the parent frame, which defaults to the root frame.
@@ -107,7 +112,7 @@ manages frame size and position while displaying BUFFER."
               (cons (cl-values (car position) (cdr position))))
           (cl-flet ((make-child-frame ()
                       (make-frame
-                       `((name . "org-srs-child-frame")
+                       `((name . "org-srs-ui-child-frame")
                          (parent-frame . ,parent)
                          (no-accept-focus . t)
                          (visibility . nil)
@@ -126,7 +131,7 @@ manages frame size and position while displaying BUFFER."
                          (skip-taskbar . t)
                          (desktop-dont-save . t)))))
             (let ((frame (let ((key (list parent name)))
-                           (or #1=(alist-get key org-srs-child-frames nil t #'equal)
+                           (or #1=(alist-get key org-srs-ui-child-frames nil t #'equal)
                                (let ((frame (make-child-frame)))
                                  (if-let ((new-frame #1#))
                                      (progn (delete-frame frame) new-frame)
@@ -141,5 +146,5 @@ manages frame size and position while displaying BUFFER."
                     (buffer-local-value 'cursor-type buffer) nil)
               frame)))))))
 
-(provide 'org-srs-child-frame)
-;;; org-srs-child-frame.el ends here
+(provide 'org-srs-ui-child-frame)
+;;; org-srs-ui-child-frame.el ends here

@@ -1,4 +1,4 @@
-;;; org-srs-mouse.el --- Mouse/touchscreen support for review interactions -*- lexical-binding: t -*-
+;;; org-srs-ui-mouse.el --- Mouse/touchscreen support for review interactions -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2024-2025 Bohong Huang
 
@@ -34,17 +34,22 @@
 
 (require 'cl-lib)
 
-(require 'org-srs-child-frame)
+(require 'org-srs-ui-child-frame)
 (require 'org-srs-review)
 (require 'org-srs-item)
 (require 'org-srs-stats-interval)
 
-(cl-defun org-srs-mouse-bottom-panel-hide (&optional (frame (org-srs-child-frame 'org-srs-mouse-bottom-panel)))
+(defgroup org-srs-ui-mouse nil
+  "Mouse and touchscreen support for review interactions."
+  :group 'org-srs-ui
+  :prefix "org-srs-ui-mouse-")
+
+(cl-defun org-srs-ui-mouse-bottom-panel-hide (&optional (frame (org-srs-ui-child-frame 'org-srs-ui-mouse-bottom-panel)))
   "Hide bottom panel child FRAME if it is visible."
   (when (frame-visible-p frame)
     (make-frame-invisible frame)))
 
-(cl-defun org-srs-mouse-string-pad-pixel (string &optional (width (string-pixel-width string)) (height (line-pixel-height)))
+(cl-defun org-srs-ui-mouse-string-pad-pixel (string &optional (width (string-pixel-width string)) (height (line-pixel-height)))
   "Return STRING padded to WIDTH and HEIGHT in pixels."
   (let ((space-width (/ (- width (string-pixel-width string)) 2)))
     (concat
@@ -52,15 +57,15 @@
      string
      (propertize " " 'display `(space :width (,space-width) :height (,height))))))
 
-(defconst org-srs-mouse-bottom-panel-button-faces
+(defconst org-srs-ui-mouse-bottom-panel-button-faces
   (cl-loop for rating in org-srs-review-ratings
            collect (cons rating (cl-ecase rating (:easy 'homoglyph) (:good 'success) (:hard 'warning) (:again 'error))))
   "Alist mapping review ratings to their corresponding button faces.")
 
-(cl-defun org-srs-mouse-bottom-panel-show (labels
-                                           &key
-                                           (faces (cl-subst-if 'default (lambda (elem) (and elem (symbolp elem))) labels))
-                                           (callback #'ignore))
+(cl-defun org-srs-ui-mouse-bottom-panel-show (labels
+                                              &key
+                                              (faces (cl-subst-if 'default (lambda (elem) (and elem (symbolp elem))) labels))
+                                              (callback #'ignore))
   "Show a bottom panel with interactive buttons.
 
 LABELS is a list of button labels to display.
@@ -69,7 +74,7 @@ CALLBACK is a function called with the pressed button's label."
   (cl-assert labels) (cl-assert faces)
   (let* ((labels-list (if (cl-every #'symbolp labels) (list labels) labels))
          (faces-list (if (cl-every #'symbolp faces) (list faces) faces))
-         (child-frame (org-srs-child-frame 'org-srs-mouse-bottom-panel :size (/ (length labels-list) 16.0)))
+         (child-frame (org-srs-ui-child-frame 'org-srs-ui-mouse-bottom-panel :size (/ (length labels-list) 16.0)))
          (current-buffer (current-buffer)))
     (with-selected-frame (make-frame-visible child-frame)
       (cl-assert (not (eq current-buffer (current-buffer))))
@@ -84,7 +89,7 @@ CALLBACK is a function called with the pressed button's label."
                            do
                            (insert "​")
                            (insert-text-button
-                            (org-srs-mouse-string-pad-pixel (capitalize (string-trim-left (format "%s" label) ":")) button-width button-height)
+                            (org-srs-ui-mouse-string-pad-pixel (capitalize (string-trim-left (format "%s" label) ":")) button-width button-height)
                             'face `((:foreground ,(face-foreground face))
                                     (:inherit custom-button))
                             'action (let ((label label)) (lambda (&optional _) (select-frame (frame-parent child-frame)) (funcall callback label))))
@@ -93,25 +98,27 @@ CALLBACK is a function called with the pressed button's label."
                finally (goto-char (point-min))))))
 
 ;;;###autoload
-(define-minor-mode org-srs-mouse-mode
+(define-minor-mode org-srs-ui-mouse-mode
   "Minor mode to enable mouse/touchscreen input support for Org-srs review actions."
-  :group 'org-srs-mouse
+  :group 'org-srs-ui-mouse
   :global t
-  (if org-srs-mouse-mode
+  (if org-srs-ui-mouse-mode
       (progn
-        (add-hook 'window-selection-change-functions #'org-srs-mouse-mode-update-panels)
-        (add-hook 'window-buffer-change-functions #'org-srs-mouse-mode-update-panels)
-        (add-hook 'window-size-change-functions #'org-srs-mouse-mode-update-panels))
-    (remove-hook 'window-selection-change-functions #'org-srs-mouse-mode-update-panels)
-    (remove-hook 'window-buffer-change-functions #'org-srs-mouse-mode-update-panels)
-    (remove-hook 'window-size-change-functions #'org-srs-mouse-mode-update-panels)
-    (setf (org-srs-child-frames 'org-srs-mouse-bottom-panel) nil)))
+        (add-hook 'window-selection-change-functions #'org-srs-ui-mouse-mode-update-panels)
+        (add-hook 'window-buffer-change-functions #'org-srs-ui-mouse-mode-update-panels)
+        (add-hook 'window-size-change-functions #'org-srs-ui-mouse-mode-update-panels))
+    (remove-hook 'window-selection-change-functions #'org-srs-ui-mouse-mode-update-panels)
+    (remove-hook 'window-buffer-change-functions #'org-srs-ui-mouse-mode-update-panels)
+    (remove-hook 'window-size-change-functions #'org-srs-ui-mouse-mode-update-panels)
+    (setf (org-srs-ui-child-frames 'org-srs-ui-mouse-bottom-panel) nil)))
+
+(define-obsolete-function-alias 'org-srs-mouse-mode #'org-srs-ui-mouse-mode "1.0")
 
 (defvar org-srs-review-item)
 
-(defun org-srs-mouse-show-intervals-in-minibuffer (&rest _)
+(defun org-srs-ui-mouse-show-intervals-in-minibuffer (&rest _)
   "Display review intervals for the current review item in the minibuffer."
-  (when (and org-srs-mouse-mode (org-srs-reviewing-p) (not (org-srs-item-confirm-pending-p)))
+  (when (and org-srs-ui-mouse-mode (org-srs-reviewing-p) (not (org-srs-item-confirm-pending-p)))
     (let ((item org-srs-review-item))
       (cl-loop with message-log-max = nil
                with width = (window-pixel-width (minibuffer-window))
@@ -123,7 +130,7 @@ CALLBACK is a function called with the pressed button's label."
                                             (cl-return)))
                by #'cddr
                concat (propertize
-                       (org-srs-mouse-string-pad-pixel
+                       (org-srs-ui-mouse-string-pad-pixel
                         (cl-loop for (amount unit has-next-p) on (org-srs-time-seconds-desc interval) by #'cddr
                                  for i from 1
                                  concat (format "%d%.1s" amount (string-trim-left (symbol-name unit) ":"))
@@ -131,37 +138,37 @@ CALLBACK is a function called with the pressed button's label."
                                  when has-next-p
                                  concat " ")
                         label-width height)
-                       'face (alist-get rating org-srs-mouse-bottom-panel-button-faces))
+                       'face (alist-get rating org-srs-ui-mouse-bottom-panel-button-faces))
                into message
                finally (message "%s" message)))))
 
-(defun org-srs-mouse-mode-update-panels-1 ()
+(defun org-srs-ui-mouse-mode-update-panels-1 ()
   "Update panels based on the current review state."
-  (if (and org-srs-mouse-mode (eq major-mode 'org-mode) (bound-and-true-p org-srs-review-item))
+  (if (and org-srs-ui-mouse-mode (eq major-mode 'org-mode) (bound-and-true-p org-srs-review-item))
       (if-let ((confirm-command (org-srs-item-confirm-pending-p)))
-          (org-srs-mouse-bottom-panel-show
+          (org-srs-ui-mouse-bottom-panel-show
            '(continue)
            :callback (lambda (continue)
                        (cl-assert (eq continue 'continue))
                        (call-interactively confirm-command)))
-        (org-srs-mouse-bottom-panel-show
+        (org-srs-ui-mouse-bottom-panel-show
          org-srs-review-ratings
-         :faces (mapcar (lambda (rating) (alist-get rating org-srs-mouse-bottom-panel-button-faces)) org-srs-review-ratings)
+         :faces (mapcar (lambda (rating) (alist-get rating org-srs-ui-mouse-bottom-panel-button-faces)) org-srs-review-ratings)
          :callback (lambda (rating)
                      (cl-assert (org-srs-reviewing-p))
                      (org-srs-review-rate rating))))
-    (org-srs-mouse-bottom-panel-hide)))
+    (org-srs-ui-mouse-bottom-panel-hide)))
 
-(defun org-srs-mouse-mode-update-panels (&rest _)
+(defun org-srs-ui-mouse-mode-update-panels (&rest _)
   "Handle panel updates when the window configuration changes."
-  (if (org-srs-child-frame-p)
-      (with-selected-frame (org-srs-child-frame-root)
-        (org-srs-mouse-mode-update-panels-1))
-    (org-srs-mouse-mode-update-panels-1)))
+  (if (org-srs-ui-child-frame-p)
+      (with-selected-frame (org-srs-ui-child-frame-root)
+        (org-srs-ui-mouse-mode-update-panels-1))
+    (org-srs-ui-mouse-mode-update-panels-1)))
 
-(add-hook 'org-srs-item-before-confirm-hook #'org-srs-mouse-mode-update-panels)
-(add-hook 'org-srs-item-after-confirm-hook #'org-srs-mouse-mode-update-panels)
-(add-hook 'org-srs-item-after-confirm-hook #'org-srs-mouse-show-intervals-in-minibuffer)
+(add-hook 'org-srs-item-before-confirm-hook #'org-srs-ui-mouse-mode-update-panels)
+(add-hook 'org-srs-item-after-confirm-hook #'org-srs-ui-mouse-mode-update-panels)
+(add-hook 'org-srs-item-after-confirm-hook #'org-srs-ui-mouse-show-intervals-in-minibuffer)
 
-(provide 'org-srs-mouse)
-;;; org-srs-mouse.el ends here
+(provide 'org-srs-ui-mouse)
+;;; org-srs-ui-mouse.el ends here

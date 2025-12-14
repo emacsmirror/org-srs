@@ -81,7 +81,7 @@ with ~use-package~:
     :custom
     (org-srs-item-confirm #'org-srs-item-confirm-command)
     :config
-    (org-srs-mouse-mode +1))
+    (org-srs-ui-mouse-mode +1))
 #+END_SRC
 * Usage
 Here are some demonstrations and descriptions for the main features of

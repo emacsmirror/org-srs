@@ -120,13 +120,23 @@ per entry, or per item."
                     (cl-return-from ,block (read ,value))))
                 ,name))))))))
 
-(cl-defun org-srs-property-group-members (&optional (group 'org-srs))
-  "Return a list of all custom variables in GROUP and its subgroups."
+(defun org-srs-property-minor-mode-p (symbol)
+  "Return non-nil if SYMBOL names a minor mode."
+  (string-suffix-p "-mode" (symbol-name symbol)))
+
+(defun org-srs-property-group-members-default-filter (member)
+  "Return non-nil if MEMBER is not a minor mode."
+  (not (org-srs-property-minor-mode-p member)))
+
+(cl-defun org-srs-property-group-members (&optional (group 'org-srs) (filter #'org-srs-property-group-members-default-filter))
+  "Collect all custom variables filtered by FILTER in GROUP and its subgroups."
   (cl-loop for (member type) in (custom-group-members group nil)
            if (eq type 'custom-variable)
+           when (funcall filter member)
            collect member
+           end
            else if (eq type 'custom-group)
-           nconc (org-srs-property-group-members member)
+           nconc (org-srs-property-group-members member filter)
            else
            do (cl-assert nil)))
 
