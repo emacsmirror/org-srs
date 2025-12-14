@@ -30,12 +30,27 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'custom)
+
+(require 'org-srs-property)
 
 (defgroup org-srs-ui nil
   "User interfaces for Org-srs."
   :group 'org-srs
   :prefix "org-srs-ui-")
+
+;;;###autoload
+(define-minor-mode org-srs-ui-mode
+  "Minor mode to enable all Org-srs user interfaces."
+  :group 'org-srs-ui
+  :global t
+  (cl-loop with arg = (if org-srs-ui-mode +1 -1)
+           for member in (org-srs-property-group-members 'org-srs-ui #'org-srs-property-minor-mode-p)
+           unless (eq member 'org-srs-ui-mode)
+           when (org-srs-property-minor-mode-p member)
+           do (cl-assert (fboundp member)) (cl-assert (boundp member))
+           (funcall member arg)))
 
 (provide 'org-srs-ui)
 ;;; org-srs-ui.el ends here
