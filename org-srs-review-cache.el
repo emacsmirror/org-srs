@@ -288,6 +288,16 @@ from a large set of review items."
              (setf (org-srs-review-cache-nth ,n ,list ',null) ,default)
            ,value)))))
 
+(define-advice org-srs-query-item-p (:around (fun . (predicate &rest item)) org-srs-review-cache)
+  (if (org-srs-review-cache-active-p)
+      (cl-loop for (cached-predicate . table) in (org-srs-review-cache-queries (org-srs-review-cache))
+               if (equal predicate cached-predicate)
+               return (gethash item table)
+               else if (and (consp cached-predicate) (eq (car cached-predicate) 'and) (cl-find predicate (cdr cached-predicate) :test #'equal))
+               when (gethash item table) return t
+               finally (cl-return (apply fun predicate item)))
+    (apply fun predicate item)))
+
 (define-advice org-srs-item-due-times (:around (fun n &rest args) org-srs-review-cache)
   (if (and (org-srs-review-cache-active-p) args)
       (let* ((args (apply #'org-srs-review-cache-item args))
@@ -429,13 +439,6 @@ from a large set of review items."
 
 (define-advice org-srs-query (:around (fun &rest args) org-srs-query-predicate@org-srs-review-cache)
   (org-srs-review-cache-without-query-predicate (apply fun args)))
-
-(define-advice org-srs-query-item-p (:around (fun . (predicate &rest item)) org-srs-query-predicate@org-srs-review-cache)
-  (if (org-srs-review-cache-active-p)
-      (progn
-        (cl-assert (not (bound-and-true-p org-srs-query-predicate@org-srs-review-cache)))
-        (if item (apply predicate item) (apply fun predicate item)))
-    (apply fun predicate item)))
 
 (provide 'org-srs-review-cache)
 ;;; org-srs-review-cache.el ends here
