@@ -33,6 +33,7 @@
 
 (require 'cl-lib)
 (require 'cl-generic)
+(require 'pcase)
 (require 'custom)
 
 (require 'org-srs-property)
@@ -238,17 +239,22 @@
 (cl-defmethod org-srs-review-strategy-items (state (_strategy (eql 'sort)) &rest args)
   "Method to return sorted items in STATE matching the strategy in ARGS."
   (cl-destructuring-bind (strategy order &rest args &aux (items (org-srs-review-strategy-items state strategy))) args
-    (cl-case order
-      (position (cl-sort items #'org-srs-review-strategy-item-marker< :key (apply-partially #'apply #'org-srs-item-marker)))
-      (due-date (cl-sort items #'org-srs-time< :key (apply-partially #'apply #'org-srs-item-due-time)))
-      (priority (cl-sort items #'> :key (apply-partially #'apply #'org-srs-item-priority)))
-      (interval (cl-sort items #'< :key (apply-partially #'apply #'org-srs-item-interval)))
-      (random (cl-sort items #'< :key #'sxhash-eq))
-      (t (apply #'cl-sort items (cl-etypecase order
-                                  (function (cl-ecase (car (func-arity order))
-                                              (2 (list order))
-                                              ((0 1) (list #'< :key order))))
-                                  (list order)))))))
+    (cl-labels ((items (order)
+                  (apply
+                   #'cl-sort items
+                   (pcase-exhaustive order
+                     ('position (list #'org-srs-review-strategy-item-marker< :key (apply-partially #'apply #'org-srs-item-marker)))
+                     ('due-date (list #'org-srs-time< :key (apply-partially #'apply #'org-srs-item-due-time)))
+                     ('priority (list #'> :key (apply-partially #'apply #'org-srs-item-priority)))
+                     ('interval (list #'< :key (apply-partially #'apply #'org-srs-item-interval)))
+                     ('random (list #'< :key #'sxhash-eq))
+                     (`(reverse ,order) (cl-return-from items (nreverse (items order))))
+                     (`(,(pred functionp) . ,(pred plistp)) order)
+                     ((pred functionp)
+                      (pcase-exhaustive (car (func-arity order))
+                        (2 (list order))
+                        ((or 0 1) (list #'< :key order))))))))
+      (items order))))
 
 (provide 'org-srs-review-strategy)
 ;;; org-srs-review-strategy.el ends here

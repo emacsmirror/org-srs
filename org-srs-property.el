@@ -33,6 +33,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'pcase)
 (require 'subr-x)
 (require 'custom)
 (require 'cus-edit)
