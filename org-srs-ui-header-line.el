@@ -59,26 +59,20 @@
            else collect item into new
            finally (cl-return (cl-values new due reviewing finished))))
 
-(defun org-srs-ui-header-line-show ()
-  "Show review statistics in the header line."
-  (cl-assert (org-srs-reviewing-p))
-  (cl-assert (null header-line-format))
-  (setf header-line-format (cl-loop for items in (cl-multiple-value-list (org-srs-ui-header-line-statistics))
-                                    for face in '(homoglyph warning error success)
-                                    concat (propertize (format " %d" (length items)) 'face face))))
-
-(defun org-srs-ui-header-line-hide ()
-  "Hide the header line that displays review statistics."
-  (cl-assert header-line-format)
-  (setf header-line-format nil))
-
 (defun org-srs-ui-header-line-before-review (&rest _)
   "Show the header line with review statistics before reviewing a item."
   (cl-assert (org-srs-reviewing-p))
   (when org-srs-ui-header-line-mode
     (save-excursion
-      (org-srs-ui-header-line-show)
-      (org-srs-review-add-hook-once 'org-srs-review-continue-hook #'org-srs-ui-header-line-hide))))
+      (let* ((header-line-new (cl-loop for items in (cl-multiple-value-list (org-srs-ui-header-line-statistics))
+                                       for face in '(homoglyph warning error success)
+                                       concat (propertize (format " %d" (length items)) 'face face)))
+             (header-line-old (cl-shiftf header-line-format header-line-new)))
+        (org-srs-review-add-hook-once
+         'org-srs-review-continue-hook
+         (lambda ()
+           (cl-assert (eq header-line-format header-line-new))
+           (setf header-line-format header-line-old)))))))
 
 (add-hook 'org-srs-item-before-review-hook #'org-srs-ui-header-line-before-review)
 
